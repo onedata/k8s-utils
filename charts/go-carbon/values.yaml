@@ -1,0 +1,422 @@
+server:
+  ## go-carbon Pod annotations:
+  ##
+  # annotations:
+  #   iam.amazonaws.com/role: go-carbon
+
+  ## Grafana Docker image
+  ##
+  image: "grafana/grafana:4.6.3"
+
+  extraEnv: {}
+  nodeSelector: {}
+  tolerations: []
+
+  ingress:
+    ## If true, Grafana Ingress will be created
+    ##
+    enabled: false
+
+    ## Grafana Ingress annotations
+    ##
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: 'true'
+
+    ## Grafana Ingress hostnames
+    ## Must be provided if Ingress is enabled
+    ##
+    # hosts:
+    #   - grafana.domain.com
+
+    ## Grafana Ingress path
+    ## Optional, allows specifying paths for more flexibility
+    ## E.g. Traefik ingress likes paths
+    ##
+    # path: /
+
+    ## Grafana Ingress TLS configuration
+    ## Secrets must be manually created in the namespace
+    ##
+    # tls:
+    #   - secretName: grafana-server-tls
+    #     hosts:
+    #       - grafana.domain.com
+
+  ## Grafana container name
+  ##
+  name: grafana
+
+  adminUser: "admin"
+  # adminPassword: "admin"
+
+  ## Global imagePullPolicy
+  ## Default: 'Always' if image tag is 'latest', else 'IfNotPresent'
+  ## Ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  # Persist data to a persitent volume
+  persistentVolume:
+    ## If true, Grafana will create a Persistent Volume Claim
+    ## If false, use emptyDir
+    ##
+    enabled: true
+
+    ## Grafana data Persistent Volume access modes
+    ## Must match those of existing PV or dynamic provisioner
+    ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+    ##
+    accessModes:
+      - ReadWriteOnce
+
+    ## Grafana data Persistent Volume annotations
+    ##
+    annotations: {}
+
+    ## Grafana data Persistent Volume existing claim name
+    ## Requires server.persistentVolume.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    existingClaim: ""
+
+    ## Grafana data Persistent Volume size
+    ## Default: 1Gi
+    ##
+    size: 1Gi
+
+    ## grafana data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+
+    ## Subdirectory of data Persistent Volume to mount
+    ## Useful if the volume's root directory is not empty
+    ##
+    subPath: ""
+
+  ## Grafana resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources:
+    # limits:
+    #   cpu: 500m
+    #   memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  ## Grafana readiness probe
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+  ##
+  # readinessProbe:
+  #   httpGet:
+  #     path: /login
+  #     port: 3000
+  #   initialDelaySeconds: 30
+  #   timeoutSeconds: 30
+
+  ## Grafana service
+  service:
+    ## Grafana service annotations
+    ##
+    annotations: {}
+
+    ## Grafana service type
+    ##
+    type: ClusterIP
+
+    ## Grafana service port
+    ##
+    httpPort: 80
+
+    ## Load balancer IP address
+    ## Is not required, but allows for static address with
+    ## serviceType LoadBalancer.
+    ## If not supported by cloud provider, this field is ignored.
+    ## Default: nil
+    ##
+    # loadBalancerIP: 130.211.x.x
+
+    ## This will restrict traffic through the cloud-provider load-balancer
+    ## to the specified client IPs.
+    ## If not supported by cloud provider, this field is ignored.
+    ## Default: nil
+    ##
+    # loadBalancerSourceRanges:
+    #   - 0.0.0.0/0
+
+    ## nodePort port number
+    ## Is not required, but allows for static port assignment with
+    ## serviceType NodePort.
+    ## Default: nil
+    # nodePort: 30000
+
+    ## External IP addresses of service
+    ## Default: nil
+    ##
+    # externalIPs:
+    # - 192.168.0.1
+
+  ## Grafana local config path
+  ## Default '/etc/grafana'
+  ##
+  # configLocalPath: /etc/grafana
+
+  ## Grafana local dashboards path
+  ## Default: '/var/lib/grafana/dashboards'
+  ##
+  # dashboardLocalPath: /var/lib/grafana/dashboards
+
+  ## Grafana local data storage path
+  ## Default: '/var/lib/grafana/data'
+  ##
+  # storageLocalPath: /var/lib/grafana/data
+
+  ## Grafana Pod termination grace period
+  ## Default: 300s (5m)
+  ##
+  # terminationGracePeriodSeconds: 300
+
+  ## Pass the plugins you want installed as a comma seperated list.
+  ## This will pass each plugin name to `grafana-cli plugins install ${plugin}`.
+  ## Ref: https://github.com/grafana/grafana-docker#installing-plugins-for-grafana-3
+  ##
+  # installPlugins:
+
+  # Set datasource in beginning
+  setDatasource:
+    ## If true, an initial Grafana Datasource will be set
+    ## Default: false
+    ##
+    enabled: false
+
+    ## How long should it take to commit failure
+    ## Default: 300
+    ##
+    # activeDeadlineSeconds: 300
+
+    ## Curl Docker image
+    ## Default: appropriate/curl:latest
+    ##
+    # image: appropriate/curl:latest
+
+    ## This assembles how curl post into Grafana
+    ## Ref1: http://docs.grafana.org/reference/http_api/#create-data-source
+    ## Ref2: https://github.com/grafana/grafana/issues/1789
+    ##
+    # datasource:
+      ## The datasource name.
+      ## Default: default
+      # name: default
+
+      ## Type of datasource
+      ## Default: prometheus
+      ##
+      # type: prometheus
+
+      ## The url of the datasource. To set correctly you need to know
+      ## the right datasource name and its port ahead. Check kubernetes
+      ## dashboard or describe the service should fulfill the requirements.
+      ## Synatx like `http://<release name>-<server name>:<port number>
+      ## Default: "http://limping-tiger-server"
+      ##
+      # url: "http://limping-tiger-server"
+
+      ## The name of the database at the datasource.
+      ## Required parameter when used with elasticsearch, which refers to the index_name
+      ## Default: <empty>
+      # database:
+
+      ## Additional JSON data to be passed to the configuration of the datasource.
+      ## The JSON data is passed to curl, therefore it needs proper quoting and
+      ## escaping and needs to be on a single line. For example:
+      ##  '\"esVersion\": 2, \"interval\": \"Daily\", \"timeField\": \"@timestamp\"'
+      # jsonData: null
+
+      ## Specify if Grafana has to go thru proxy to reach datasource
+      ## Default: proxy
+      ##
+      # access: proxy
+
+      ## Specify should Grafana use this datasource as default
+      ## Default: true
+      ##
+      # isDefault: true
+
+    ## Specify the job policy
+    ## Default: OnFailure
+    ##
+    # restartPolicy: OnFailure
+
+## Grafana config file ConfigMap entry
+##
+configs:
+  storage-schemas.conf: |-
+    # Documentation:
+    # http://graphite.readthedocs.io/en/latest/config-carbon.html#storage-schemas-conf
+
+    [default]
+    pattern = .*
+    retentions = 10s:30d
+  storage-aggregation.conf: |-
+    # Documentation:
+    # http://graphite.readthedocs.io/en/latest/config-carbon.html#storage-aggregation-conf
+
+    [default]
+    pattern = .*
+    xFilesFactor = 0.5
+    aggregationMethod = average
+  go-carbon.conf: |-
+    [common]
+    # Run as user. Works only in daemon mode
+    user = "carbon"
+    # Prefix for store all internal go-carbon graphs. Supported macroses: {host}
+    graph-prefix = "carbon.agents.{host}"
+    # Endpoint for store internal carbon metrics. Valid values: "" or "local", "tcp://host:port", "udp://host:port"
+    metric-endpoint = "local"
+    # Interval of storing internal metrics. Like CARBON_METRIC_INTERVAL
+    metric-interval = "1m0s"
+    # Increase for configuration with multi persister workers
+    max-cpu = 16
+
+    [whisper]
+    data-dir = "/var/lib/graphite/whisper"
+    # http://graphite.readthedocs.org/en/latest/config-carbon.html#storage-schemas-conf. Required
+    schemas-file = "/etc/go-carbon/storage-schemas.conf"
+    # http://graphite.readthedocs.org/en/latest/config-carbon.html#storage-aggregation-conf. Optional
+    aggregation-file = "/etc/go-carbon/storage-aggregation.conf"
+    # Worker threads count. Metrics sharded by "crc32(metricName) % workers"
+    workers = 32
+    # Limits the number of whisper update_many() calls per second. 0 - no limit
+    max-updates-per-second = 0
+    # Sparse file creation
+    sparse-create = true
+    enabled = true
+
+    [cache]
+    # Limit of in-memory stored points (not metrics)
+    max-size = 1000000
+    # Capacity of queue between receivers and cache
+    # Strategy to persist metrics. Values: "max","sorted","noop"
+    #   "max" - write metrics with most unwritten datapoints first
+    #   "sorted" - sort by timestamp of first unwritten datapoint.
+    #   "noop" - pick metrics to write in unspecified order,
+    #            requires least CPU and improves cache responsiveness
+    write-strategy = "max"
+
+    [udp]
+    listen = ":2003"
+    enabled = true
+    # Enable optional logging of incomplete messages (chunked by max UDP packet size)
+    log-incomplete = false
+    # Optional internal queue between receiver and cache
+    buffer-size = 0
+
+    [tcp]
+    listen = ":2003"
+    enabled = true
+    # Optional internal queue between receiver and cache
+    buffer-size = 0
+
+    [pickle]
+    listen = ":2004"
+    # Limit message size for prevent memory overflow
+    max-message-size = 67108864
+    enabled = true
+    # Optional internal queue between receiver and cache
+    buffer-size = 0
+
+    [carbonlink]
+    listen = "127.0.0.1:7002"
+    enabled = false
+    # Close inactive connections after "read-timeout"
+    read-timeout = "30s"
+
+    [carbonserver]
+    # Please NOTE: carbonserver is not intended to fully replace graphite-web
+    # It acts as a "REMOTE_STORAGE" for graphite-web or carbonzipper/carbonapi
+    listen = "0.0.0.0:8080"
+    # Carbonserver support is still experimental and may contain bugs
+    # Or be incompatible with github.com/grobian/carbonserver
+    enabled = true
+    # Buckets to track response times
+    buckets = 10
+    # carbonserver-specific metrics will be sent as counters
+    # For compatibility with grobian/carbonserver
+    metrics-as-counters = false
+    # Read and Write timeouts for HTTP server
+    read-timeout = "60s"
+    write-timeout = "60s"
+    # Enable /render cache, it will cache the result for 1 minute
+    query-cache-enabled = true
+    # 0 for unlimited
+    query-cache-size-mb = 0
+    # Enable /metrics/find cache, it will cache the result for 5 minutes
+    find-cache-enabled = true
+    # Control trigram index
+    #  This index is used to speed-up /find requests
+    #  However, it will lead to increased memory consumption
+    #  Estimated memory consumption is approx. 500 bytes per each metric on disk
+    #  Another drawback is that it will recreate index every scan-frequency interval
+    #  All new/deleted metrics will still be searchable until index is recreated
+    trigram-index = false
+    # carbonserver keeps track of all available whisper files
+    # in memory. This determines how often it will check FS
+    # for new or deleted metrics.
+    scan-frequency = "30s"
+    # Maximum amount of globs in a single metric in index
+    # This value is used to speed-up /find requests with
+    # a lot of globs, but will lead to increased memory consumption
+    max-globs = 100
+    # graphite-web-10-mode
+    # Use Graphite-web 1.0 native structs for pickle response
+    # This mode will break compatibility with graphite-web 0.9.x
+    # If false, carbonserver won't send graphite-web 1.0 specific structs
+    # That might degrade performance of the cluster
+    # But will be compatible with both graphite-web 1.0 and 0.9.x
+    graphite-web-10-strict-mode = true
+
+    [dump]
+    # Enable dump/restore function on USR2 signal
+    enabled = true
+    # Directory for store dump data. Should be writeable for carbon
+    path = "/var/lib/graphite/dump/"
+    # Restore speed. 0 - unlimited
+    restore-per-second = 0
+
+    [pprof]
+    listen = "localhost:7007"
+    enabled = false
+
+    # Default logger
+    [[logging]]
+    # logger name
+    # available loggers:
+    # * "" - default logger for all messages without configured special logger
+    # @TODO
+    logger = ""
+    # Log output: filename, "stderr", "stdout", "none", "" (same as "stderr")
+    file = "stdout"
+    # Log level: "debug", "info", "warn", "error", "dpanic", "panic", and "fatal"
+    level = "info"
+    # Log format: "json", "console", "mixed"
+    encoding = "mixed"
+    # Log time format: "millis", "nanos", "epoch", "iso8601"
+    encoding-time = "iso8601"
+    # Log duration format: "seconds", "nanos", "string"
+    encoding-duration = "seconds"
+
+    # You can define multiply loggers:
+
+    # Copy errors to stderr for systemd
+    # [[logging]]
+    # logger = ""
+    # file = "stderr"
+    # level = "error"
+    # encoding = "mixed"
+    # encoding-time = "iso8601"
+    # encoding-duration = "seconds"

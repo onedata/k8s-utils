@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ template "go-carbon.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Values.server.name }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+  name: {{ template "go-carbon.server.fullname" . }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+      {{- range $key, $value := .Values.server.annotations }}
+        {{ $key }}: {{ $value }}
+      {{- end }}
+      labels:
+        app: {{ template "go-carbon.fullname" . }}
+        component: "{{ .Values.server.name }}"
+        release: "{{ .Release.Name }}"
+    spec:
+      nodeSelector:
+{{ toYaml .Values.server.nodeSelector | indent 8 }}
+  {{- if .Values.server.tolerations }}
+      tolerations:
+{{ toYaml .Values.server.tolerations | indent 8 }}
+  {{- end }}
+      containers:
+        - name: {{ template "go-carbon.name" . }}
+          image: "{{ .Values.server.image }}"
+          imagePullPolicy: {{ default "Always" .Values.server.imagePullPolicy }}
+          ports:
+            - containerPort: 2003
+            - containerPort: 2004
+            - containerPort: 8080
+          readinessProbe:
+{{ toYaml .Values.server.readinessProbe | indent 12 }}
+          resources:
+{{ toYaml .Values.server.resources | indent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: {{ default "/etc/go-carbon" .Values.server.configLocalPath | quote }}
+            - name: storage-volume
+              mountPath: {{ default "/var/lib/go-carbon" .Values.server.storageLocalPath | quote }}
+              subPath: "{{ .Values.server.persistentVolume.subPath }}"
+      terminationGracePeriodSeconds: {{ default 300 .Values.server.terminationGracePeriodSeconds }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ template "go-carbon.server.fullname" . }}-config
+        - name: storage-volume
+      {{- if .Values.server.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "go-carbon.server.fullname" . }}{{- end }}
+      {{- else }}
+          emptyDir: {}
+      {{- end -}}

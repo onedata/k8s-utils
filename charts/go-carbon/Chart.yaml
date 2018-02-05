@@ -1,0 +1,10 @@
+name: go-carbon
+version: 0.1.0
+description: Golang implementation of Graphite/Carbon server
+home: https://github.com/lomik/go-carbon
+sources:
+  - https://github.com/lomik/go-carbon
+maintainers:
+  - name: Michal Orzechowski
+    email: orzechowski.michal@gmail.com
+engine: gotpl

@@ -1,0 +1,10 @@
+name: carbonapi
+version: 0.1.0
+description: API server for github.com/go-graphite/carbonzipper
+home: https://github.com/go-graphite/carbonapi
+sources:
+  - https://github.com/go-graphite/carbonapi
+maintainers:
+  - name: Michal Orzechowski
+    email: orzechowski.michal@gmail.com
+engine: gotpl

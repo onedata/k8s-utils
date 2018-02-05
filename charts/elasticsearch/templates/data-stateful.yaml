@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "elasticsearch.data.fullname" . }}
+  labels:
+    app: {{ template "elasticsearch.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    component: "elasticsearch"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    role: data
+spec:
+  serviceName: {{ template "elasticsearch.service.fullname" . }}
+  replicas: {{ .Values.data.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "elasticsearch.name" . }}
+      chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+      component: "elasticsearch"
+      heritage: {{ .Release.Service | quote }}
+      release: {{ .Release.Name | quote }}
+      role: data
+  template:
+    metadata:
+      labels:
+        app: {{ template "elasticsearch.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+        component: "elasticsearch"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+        role: data
+    spec:
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
+      initContainers:
+        - name: sysctl
+          image: busybox
+          imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          securityContext:
+            privileged: true
+          command:
+            - sysctl
+            - -w
+            - vm.max_map_count=262144
+      containers:
+      - name: es-data
+        securityContext:
+          privileged: false
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: {{ .Values.image | quote }}
+        imagePullPolicy: Always
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: "CLUSTER_NAME"
+          value: {{ .Values.clusterName | quote }}
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "false"
+        - name: "ES_JAVA_OPTS"
+          value: "-Xms256m -Xmx256m"
+        - name: "DISCOVERY_SERVICE"
+          value: "{{ template "elasticsearch.discovery.fullname" . }}"
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+{{- if .Values.data.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: {{ .Values.data.persistence.storageClass | quote }}
+    spec:
+      accessModes: 
+        - {{ .Values.data.persistence.accessMode | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.data.persistence.size | quote }}
+{{- else }}
+      volumes:
+          - emptyDir:
+              medium: ""
+            name: "storage"
+{{- end }}

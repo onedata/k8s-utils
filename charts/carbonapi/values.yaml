@@ -1,0 +1,218 @@
+server:
+  ## carbonapi Pod annotations:
+  ##
+  # annotations:
+  #   iam.amazonaws.com/role: carbonapi
+
+  ## carbonapi Docker image
+  ##
+  image: "onedata/docker-go-graphite:crbonapi-20171212_200402"
+
+  extraEnv: {}
+  nodeSelector: {}
+  tolerations: []
+
+  ingress:
+    ## If true, Grafana Ingress will be created
+    ##
+    enabled: false
+
+    ## Grafana Ingress annotations
+    ##
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: 'true'
+
+    ## Grafana Ingress hostnames
+    ## Must be provided if Ingress is enabled
+    ##
+    # hosts:
+    #   - grafana.domain.com
+
+    ## Grafana Ingress path
+    ## Optional, allows specifying paths for more flexibility
+    ## E.g. Traefik ingress likes paths
+    ##
+    # path: /
+
+    ## Grafana Ingress TLS configuration
+    ## Secrets must be manually created in the namespace
+    ##
+    # tls:
+    #   - secretName: grafana-server-tls
+    #     hosts:
+    #       - grafana.domain.com
+  ## carbonapi container name
+  ##
+  name: carbonapi
+
+  ## Global imagePullPolicy
+  ## Default: 'Always' if image tag is 'latest', else 'IfNotPresent'
+  ## Ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  # Persist data to a persitent volume
+  persistentVolume:
+    ## If true, carbonapi will create a Persistent Volume Claim
+    ## If false, use emptyDir
+    ##
+    enabled: false
+
+    ## carbonapi data Persistent Volume access modes
+    ## Must match those of existing PV or dynamic provisioner
+    ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+    ##
+    accessModes:
+      - ReadWriteOnce
+
+    ## carbonapi data Persistent Volume annotations
+    ##
+    annotations: {}
+
+    ## carbonapi data Persistent Volume existing claim name
+    ## Requires server.persistentVolume.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    existingClaim: ""
+
+    ## carbonapi data Persistent Volume size
+    ## Default: 1Gi
+    ##
+    size: 1Gi
+
+    ## carbonapi data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+
+    ## Subdirectory of data Persistent Volume to mount
+    ## Useful if the volume's root directory is not empty
+    ##
+    subPath: ""
+
+  ## carbonapi resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources:
+    # limits:
+    #   cpu: 500m
+    #   memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  ## carbonapi readiness probe
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+  ##
+  # readinessProbe:
+  #   httpGet:
+  #     path: /login
+  #     port: 3000
+  #   initialDelaySeconds: 30
+  #   timeoutSeconds: 30
+
+  ## carbonapi service
+  service:
+    ## carbonapi service annotations
+    ##
+    annotations: {}
+
+    ## carbonapi service type
+    ##
+    type: ClusterIP
+
+    ## carbonapi service port
+    ##
+    httpPort: 80
+
+  ## carbonapi local config path
+  ## Default '/etc/carbonapi'
+  ##
+  # configLocalPath: /etc/carbonapi
+
+  ## carbonapi local data storage path
+  ## Default: '/var/lib/carbonapi/data'
+  ##
+  # storageLocalPath: /var/lib/carbonapi/data
+
+  ## carbonapi Pod termination grace period
+  ## Default: 300s (5m)
+  ##
+  # terminationGracePeriodSeconds: 300
+
+## carbonapi config file ConfigMap entry
+##
+configs:
+  carbonapi.yaml: |-
+    # Need to be URL, http or https
+    # This url specifies the backend or a loadbalancer
+    #
+    # Is you are using carbonzipper you should set it to
+    # zipper's url
+    #
+    # If you are using plain go-carbon or graphite-clickhouse
+    # you should set it to URL of go-carbon's carbonserver module
+    # or graphite-clickhouse's http url.
+    zipper: "http://go-carbon.logs:8080"
+    # Listen address, should always include hostname or ip address and a port.
+    listen: "0.0.0.0:8081"
+    # Max concurrent requests to CarbonZipper
+    concurency: 20
+    cache:
+      # Type of caching. Valid: "mem", "memcache", "null"
+      type: "mem"
+      # Cache limit in megabytes
+      size_mb: 0
+      # Default cache timeout value. Identical to DEFAULT_CACHE_DURATION in graphite-web.
+      defaultTimeoutSec: 60
+      # Only used by memcache type of cache. List of memcache servers.
+      memcachedServers:
+          - "127.0.0.1:1234"
+          - "127.0.0.2:1235"
+    # Amount of CPUs to use. 0 - unlimited
+    cpus: 0
+    # Timezone, default - local
+    tz: ""
+    # If 'true', carbonapi will send requests as is, with globs and braces
+    # Otherwise for each request it will generate /metrics/find and then /render
+    # individual metrics.
+    # true --- faster, but will cause carbonzipper to consume much more RAM.
+    #
+    # For some backends (e.x. graphite-clickhouse) this *MUST* be set to true in order
+    # to get reasonable performance
+    #
+    # For go-carbon --- it depends on how you use it.
+    sendGlobsAsIs: false
+    # If sendGlobsAsIs is set and resulting response will be larger than maxBatchSize
+    # carbonapi will revert to old behavir. This allows you to use benifits of passing
+    # globs as is but keep memory usage in sane limits.
+    #
+    # For go-carbon you might want it to keep in some reasonable limits, 100 is good "safe" defaults
+    #
+    # For some backends (e.x. graphite-clickhouse) you might want to set it to some insanly high value, like 100000
+    maxBatchSize: 100
+    graphite:
+        # Host:port where to send internal metrics
+        # Empty = disabled
+        host: "go-carbon.logs:2003"
+        interval: "60s"
+        prefix: "carbon.api"
+    # Maximium idle connections to carbonzipper
+    idleConnections: 10
+    pidFile: ""
+    # See https://github.com/go-graphite/carbonzipper/blob/master/example.conf#L70-L108 for format explanation
+    logger:
+        - logger: ""
+          file: "stderr"
+          level: "debug"
+          encoding: "console"
+          encodingTime: "iso8601"
+          encodingDuration: "seconds"
+        - logger: ""
+          file: "carbonapi.log"
+          level: "info"
+          encoding: "json"

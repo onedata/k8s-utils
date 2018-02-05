@@ -1,0 +1,30 @@
+charts:
+  - name: grafana
+    namespace: mon
+    chart: ../../charts/grafana
+    values: [ grafana-values.yml ]
+    set: 
+      - name: fullNameOverride
+        value: grafana
+      - name: server.fullNameOverride
+        value: grafana
+
+  - name: carbonapi
+    namespace: mon
+    chart: ../../charts/carbonapi
+    values: [ carbonapi-values.yaml ]
+    set: 
+      - name: fullNameOverride
+        value: carbonapi
+      - name: server.fullNameOverride
+        value: carbonapi
+
+  - name: go-carbon
+    namespace: mon
+    chart: ../../charts/go-carbon
+    values: [ go-carbon-values.yaml ]
+    set: 
+      - name: fullNameOverride
+        value: go-carbon
+      - name: server.fullNameOverride
+        value: go-carbon

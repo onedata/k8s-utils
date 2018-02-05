@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.server.serviceExternal.annotations }}
+  annotations:
+{{ toYaml .Values.server.serviceExternal.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app: {{ template "go-carbon.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Values.server.name }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+  name: {{ template "go-carbon.server.fullname" . }}-external
+spec:
+  ports:
+    - name: carbonreceiverplaintext
+      port: 2003
+      nodePort: {{ .Values.server.serviceExternal.nodePort }}
+  selector:
+    app: {{ template "go-carbon.fullname" . }}
+    component: "{{ .Values.server.name }}"
+  type: "{{ .Values.server.serviceExternal.type }}"

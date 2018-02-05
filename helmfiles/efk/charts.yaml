@@ -1,0 +1,9 @@
+repositories:
+  - name: kismatic
+    url: https://apprenda.github.io/kismatic-charts/
+
+charts:
+  - name: efk
+    namespace: logs
+    chart: ../../charts/efk
+    values: [ efk-values.yaml ]
