@@ -4,11 +4,11 @@ server:
   extraEnv: {}
 
   nodeSelector:
-    onedata.org/service.logs: ""
+    onedata.org/service.mon: ""
 
 # kubectl taint nodes k8s-2-otc-onedata-0002 onedata/service.logs:NoSchedule
   tolerations:
-    - key: onedata.org/service.logs
+    - key: onedata.org/service.mon
       effect: "PreferNoSchedule"
 
   name: carbonapi
@@ -78,7 +78,7 @@ configs:
     # If you are using plain go-carbon or graphite-clickhouse
     # you should set it to URL of go-carbon's carbonserver module
     # or graphite-clickhouse's http url.
-    zipper: "http://go-carbon.logs:8080"
+    zipper: "http://go-carbon.mon:8080"
     # Listen address, should always include hostname or ip address and a port.
     listen: "0.0.0.0:8081"
     # Max concurrent requests to CarbonZipper
@@ -119,7 +119,7 @@ configs:
     graphite:
         # Host:port where to send internal metrics
         # Empty = disabled
-        host: "go-carbon.logs:2003"
+        host: "go-carbon.mon:2003"
         interval: "60s"
         prefix: "carbon.api"
     # Maximium idle connections to carbonzipper

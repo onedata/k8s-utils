@@ -2,11 +2,11 @@ server:
   image: "grafana/grafana:4.6.2"
 
   nodeSelector:
-    onedata.org/service.logs: ""
+    onedata.org/service.mon: ""
 
-# kubectl taint nodes k8s-2-otc-onedata-0002 onedata/service.logs:NoSchedule
+# kubectl taint nodes k8s-2-otc-onedata-0002 onedata/service.mon:NoSchedule
   tolerations:
-    - key: onedata.org/service.logs
+    - key: onedata.org/service.mon
       effect: "PreferNoSchedule"
 
   ## Grafana container name
@@ -39,7 +39,7 @@ server:
     datasource:
       name: go-carbon
       type: graphite
-      url: "http://carbonapi.logs:8081"
+      url: "http://carbonapi.mon:8081"
       access: proxy
       isDefault: true
       jsonData: '\"graphiteVersion\": \"1.1\"'

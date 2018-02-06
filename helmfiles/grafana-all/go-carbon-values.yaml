@@ -9,11 +9,11 @@ server:
   image: "onedata/docker-go-graphite:go-carbon-20171212_200402"
 
   nodeSelector:
-    onedata.org/service.logs: ""
+    onedata.org/service.mon: ""
 
-# kubectl taint nodes k8s-2-otc-onedata-0002 onedata/service.logs:NoSchedule
+# kubectl taint nodes k8s-2-otc-onedata-0002 onedata/service.mon:NoSchedule
   tolerations:
-    - key: onedata.org/service.logs
+    - key: onedata.org/service.mon
       effect: "PreferNoSchedule"
 
   ## go-carbon container name
