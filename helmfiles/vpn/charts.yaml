@@ -1,0 +1,21 @@
+# repositories:
+#   - name: roboll
+#     url: http://roboll.io/charts
+
+charts:
+  - name: openvpn
+    namespace: vpn
+    chart: ../../charts/openvpn
+    values: [ openvpn-values.yaml ]
+    set: 
+      - name: fullNameOverride
+        value: "openvpn"
+      # kubectl label node k8s-cyfronet-1-master onedata.org/service.vpn=
+      - name: nodeSelector.onedata\.org/service\.vpn
+        value: ""
+      # TODO: fidn a way to move those values here
+      # from values file
+      # - name: tolerations[0].key
+      #   value: node-role.kubernetes.io/master
+      # - name: tolerations[0].effect
+      #   value: NoSchedule

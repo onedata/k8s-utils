@@ -1,0 +1,92 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "openvpn.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "openvpn.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "openvpn.fullname" . }}
+        type: openvpn
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["/etc/openvpn/setup/configure.sh"]
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+          name: openvpn
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+        resources:
+          requests:
+            cpu: "{{ .Values.resources.requests.cpu }}"
+            memory: "{{ .Values.resources.requests.memory }}"
+          limits:
+            cpu: "{{ .Values.resources.limits.cpu }}"
+            memory: "{{ .Values.resources.limits.memory }}"
+        volumeMounts:
+          - mountPath: /etc/openvpn/setup
+            name: openvpn
+            readOnly: false
+        {{- if .Values.persistence.enabled }}
+          - mountPath: /etc/openvpn/certs
+            name: certs
+            readOnly: false
+        {{- end }}
+        {{- if .Values.pki_in_secret.enabled }}
+          - mountPath: /etc/openvpn/certs/pki
+            name: pki
+            readOnly: false
+        {{- end }}
+      volumes:
+      - name: openvpn
+        configMap:
+          name: {{ template "openvpn.fullname" . }}
+          defaultMode: 0775
+    {{- if .Values.pki_in_secret.enabled }}
+      - name: pki
+        secret:
+          secretName: {{ template "openvpn.fullname" . }}
+          items:
+            - key: ca
+              path: ca.crt
+            - key: dh
+              path: dh.pem
+            - key: server_key
+              path: private/server.key
+            - key: server_cert
+              path: issued/server.crt
+            - key: ca_key
+              path: private/ca.key
+            - key: serial
+              path: serial
+            - key: index
+              path: index.txt
+    {{- end }}
+      - name: certs
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "openvpn.fullname" . }}{{- end }}
+      {{- end -}}
+     {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
